@@ -33,6 +33,12 @@ function formatDate(value) {
     : date.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })
 }
 
+function electionStatus(candidate, scope) {
+  if (candidate.eleito === 'S') return { label: 'Eleito', tone: 'elected' }
+  if (scope?.totalizacaoFinal) return { label: 'Não eleito', tone: 'not-elected' }
+  return { label: 'Em apuração', tone: 'counting' }
+}
+
 function App() {
   const [results, setResults] = React.useState({})
   const [activeId, setActiveId] = React.useState('senador')
@@ -209,7 +215,7 @@ function App() {
           {loading && !data ? <div className="loading-state">Consultando a fonte oficial…</div> : displayedCandidates.map((candidate, index) => (
             <div className="candidate" key={`${candidate.numero}-${candidate.nome}`}>
               <span className="rank">{candidate.posicao || index + 1}</span>
-              <div className="candidate-name"><strong>{candidate.nome}</strong><span>{candidate.partido} · {candidate.numero}</span></div>
+              <div className="candidate-name"><strong>{candidate.nome} <span className={`election-badge ${electionStatus(candidate, scope).tone}`}>{electionStatus(candidate, scope).label}</span></strong><span>{candidate.partido} · {candidate.numero}</span></div>
               <div className="candidate-votes"><strong>{candidate.votos.porcentagem}%</strong><span>{number.format(candidate.votos.quantidade)} votos</span></div>
               <button className={`pin ${favoriteKeys.includes(candidateKey(activeId, candidate)) ? 'pinned' : ''}`} onClick={() => toggleFavorite(activeId, candidate)} aria-label={`${favoriteKeys.includes(candidateKey(activeId, candidate)) ? 'Remover' : 'Fixar'} ${candidate.nome}`} title="Fixar candidato">★</button>
             </div>
