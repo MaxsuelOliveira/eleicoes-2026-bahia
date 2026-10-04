@@ -2,11 +2,16 @@ import React, { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './styles.css'
 
-const API_BASE = 'https://s.glbimg.com/jo/el/2026/apuracao/1-turno/ba'
+const TSE_BASE = 'https://resultados.tse.jus.br/oficial/ele2026'
+const STATES = [
+  ['ac', 'Acre'], ['al', 'Alagoas'], ['ap', 'Amapá'], ['am', 'Amazonas'], ['ba', 'Bahia'], ['ce', 'Ceará'], ['df', 'Distrito Federal'], ['es', 'Espírito Santo'], ['go', 'Goiás'], ['ma', 'Maranhão'], ['mt', 'Mato Grosso'], ['ms', 'Mato Grosso do Sul'], ['mg', 'Minas Gerais'], ['pa', 'Pará'], ['pb', 'Paraíba'], ['pr', 'Paraná'], ['pe', 'Pernambuco'], ['pi', 'Piauí'], ['rj', 'Rio de Janeiro'], ['rn', 'Rio Grande do Norte'], ['rs', 'Rio Grande do Sul'], ['ro', 'Rondônia'], ['rr', 'Roraima'], ['sc', 'Santa Catarina'], ['sp', 'São Paulo'], ['se', 'Sergipe'], ['to', 'Tocantins'],
+].map(([id, name]) => ({ id, name }))
 const ELECTIONS = [
-  { id: 'senador', title: 'Senado Federal', shortTitle: 'Senador', description: '2 vagas em disputa', icon: '◉' },
-  { id: 'deputado-federal', title: 'Câmara dos Deputados', shortTitle: 'Deputado Federal', description: '39 cadeiras em disputa', icon: '▦' },
-  { id: 'deputado-estadual', title: 'Assembleia Legislativa', shortTitle: 'Deputado Estadual', description: '63 cadeiras em disputa', icon: '▤' },
+  { id: 'presidente', code: '0001', election: '6257', scope: 'br', title: 'Presidência da República', shortTitle: 'Presidente', description: 'Eleição nacional', icon: '◉' },
+  { id: 'governador', code: '0003', election: '6259', scope: 'uf', title: 'Governo do Estado', shortTitle: 'Governador', description: 'Eleição estadual', icon: '◆' },
+  { id: 'senador', code: '0005', election: '6259', scope: 'uf', title: 'Senado Federal', shortTitle: 'Senador', description: '2 vagas em disputa', icon: '◉' },
+  { id: 'deputado-federal', code: '0006', election: '6259', scope: 'uf', title: 'Câmara dos Deputados', shortTitle: 'Dep. Federal', description: 'Deputado Federal', icon: '▦' },
+  { id: 'deputado-estadual', code: '0007', election: '6259', scope: 'uf', title: 'Assembleia Legislativa', shortTitle: 'Dep. Estadual', description: 'Deputado Estadual', icon: '▤' },
 ]
 
 const number = new Intl.NumberFormat('pt-BR')
@@ -39,9 +44,39 @@ function electionStatus(candidate, scope) {
   return { label: 'Em apuração', tone: 'counting' }
 }
 
+function resultUrl(election, uf) {
+  const scope = election.scope === 'br' ? 'br' : uf
+  return `${TSE_BASE}/${election.election}/dados/${scope}/${scope}-c${election.code}-e00${election.election}-u.json`
+}
+
+function normalizeTseResult(payload) {
+  const candidates = (payload.carg?.[0]?.agr ?? []).flatMap((group) =>
+    (group.par ?? []).flatMap((party) => (party.cand ?? []).map((candidate) => ({
+      destinacaoDosVotos: candidate.dvt,
+      eleito: candidate.e === 's' ? 'S' : 'N',
+      posicao: Number(candidate.seq),
+      nome: candidate.nmu || candidate.nm,
+      numero: candidate.n,
+      partido: party.sg,
+      votos: { porcentagem: candidate.pvap || '0,00', quantidade: Number(candidate.vap || 0) },
+    }))),
+  )
+
+  return {
+    dataHora: `${payload.dt || ''} ${payload.ht || ''}`.trim(),
+    abrangencia: {
+      andamento: payload.e?.pest || '0,00', eleitoradoApurado: Number(payload.e?.est || 0), eleitores: Number(payload.e?.te || 0),
+      secoes: Number(payload.s?.ts || 0), secoesTotalizadas: Number(payload.s?.st || 0), totalizacaoFinal: payload.and === 'f',
+      votos: { validos: { porcentagem: payload.v?.pvv || '0,00', quantidade: Number(payload.v?.vv || 0) }, comparecimento: payload.e?.pc || '0,00' },
+    },
+    candidatos: candidates,
+  }
+}
+
 function App() {
   const [results, setResults] = React.useState({})
-  const [activeId, setActiveId] = React.useState('senador')
+  const [activeId, setActiveId] = React.useState('presidente')
+  const [selectedUf, setSelectedUf] = React.useState('ba')
   const [loading, setLoading] = React.useState(true)
   const [error, setError] = React.useState('')
   const [updatedAt, setUpdatedAt] = React.useState(null)
@@ -58,9 +93,9 @@ function App() {
       setError('')
       const responses = await Promise.all(
         ELECTIONS.map(async (election) => {
-          const response = await fetch(`${API_BASE}/${election.id}.json`, { cache: 'no-store' })
+          const response = await fetch(resultUrl(election, selectedUf), { cache: 'no-store' })
           if (!response.ok) throw new Error(`Não foi possível atualizar ${election.shortTitle}.`)
-          return [election.id, await response.json()]
+          return [election.id, normalizeTseResult(await response.json())]
         }),
       )
       setResults(Object.fromEntries(responses))
@@ -70,7 +105,7 @@ function App() {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [selectedUf])
 
   React.useEffect(() => {
     loadResults()
@@ -109,6 +144,7 @@ function App() {
   }, [results, favoriteKeys, notificationPermission])
 
   const activeElection = ELECTIONS.find((item) => item.id === activeId)
+  const selectedState = STATES.find((state) => state.id === selectedUf)
   const data = results[activeId]
   const scope = data?.abrangencia
   const candidates = [...(data?.candidatos ?? [])]
@@ -154,9 +190,9 @@ function App() {
           </div>
           <div className="live-pill"><span className="pulse" /> APURAÇÃO AO VIVO</div>
           <h1>Bahia decide seu futuro.</h1>
-          <p>Acompanhe os resultados oficiais das eleições legislativas em tempo real.</p>
+          <p>Acompanhe os resultados oficiais das eleições gerais em tempo real.</p>
           <div className="hero-meta">
-            <span>BAHIA</span><i />
+            <span>{activeElection?.scope === 'br' ? 'BRASIL' : selectedState?.name.toUpperCase()}</span><i />
             <span>{scope ? `${number.format(scope.eleitores)} eleitores` : 'Dados oficiais'}</span>
           </div>
         </div>
@@ -168,9 +204,7 @@ function App() {
             <p className="eyebrow">RESULTADOS OFICIAIS</p>
             <h2>Apuração em andamento</h2>
           </div>
-          <button className="refresh" onClick={loadResults} disabled={loading}>
-            <span className={loading ? 'spin' : ''}>↻</span> {loading ? 'Atualizando' : 'Atualizar agora'}
-          </button>
+          <div className="controls"><label className="state-picker">Estado<select value={selectedUf} onChange={(event) => setSelectedUf(event.target.value)}>{STATES.map((state) => <option value={state.id} key={state.id}>{state.name}</option>)}</select></label><button className="refresh" onClick={loadResults} disabled={loading}><span className={loading ? 'spin' : ''}>↻</span> {loading ? 'Atualizando' : 'Atualizar agora'}</button></div>
         </div>
 
         {error && <div className="notice error">{error} <button onClick={loadResults}>Tentar novamente</button></div>}

@@ -1,6 +1,6 @@
 # Eleições 2026 · Bahia
 
-Painel web em React para acompanhar, em tempo real, a apuração das eleições legislativas de 2026 na Bahia.
+Painel web em React para acompanhar, em tempo real, a apuração das Eleições Gerais de 2026 em todo o Brasil.
 
 O projeto consulta as fontes públicas de apuração, mostra os indicadores da totalização e ajuda a acompanhar candidatos específicos por meio de busca, favoritos e alertas locais.
 
@@ -12,7 +12,8 @@ Após a primeira publicação no GitHub Pages, o endereço será:
 
 ## Recursos
 
-- Apuração de **Senador**, **Deputado Federal** e **Deputado Estadual**.
+- Seletor para os 26 estados e o Distrito Federal.
+- Apuração de **Presidente**, **Governador**, **Senador**, **Deputado Federal** e **Deputado Estadual**.
 - Atualização automática a cada 30 segundos e botão de atualização manual.
 - Percentual de apuração, seções totalizadas, votos válidos e comparecimento.
 - Busca por nome, partido ou número de candidato.
@@ -23,11 +24,14 @@ Após a primeira publicação no GitHub Pages, o endereço será:
 
 ## Fontes de dados
 
-Os dados são obtidos diretamente dos arquivos públicos de apuração eleitoral disponibilizados em:
+Os dados são obtidos diretamente dos arquivos JSON públicos de divulgação do Tribunal Superior Eleitoral (TSE), em `https://resultados.tse.jus.br`.
 
-- `https://s.glbimg.com/jo/el/2026/apuracao/1-turno/ba/senador.json`
-- `https://s.glbimg.com/jo/el/2026/apuracao/1-turno/ba/deputado-federal.json`
-- `https://s.glbimg.com/jo/el/2026/apuracao/1-turno/ba/deputado-estadual.json`
+O aplicativo monta as URLs oficiais conforme a documentação técnica do TSE:
+
+- Presidente (abrangência Brasil): `.../ele2026/6257/dados/br/br-c0001-e006257-u.json`
+- Cargos estaduais por UF: `.../ele2026/6259/dados/{uf}/{uf}-c{cargo}-e006259-u.json`
+
+Os códigos de cargo utilizados são `0003` (Governador), `0005` (Senador), `0006` (Deputado Federal) e `0007` (Deputado Estadual).
 
 O aplicativo não altera os dados das fontes e não estima resultados. Quando a fonte informar `0,00%` de apuração, esse é exatamente o estado apresentado na interface.
 
