@@ -67,9 +67,22 @@ Os favoritos são armazenados somente no `localStorage` do navegador atual. Nenh
 
 ## Publicação no GitHub Pages
 
-O workflow [deploy-pages.yml](.github/workflows/deploy-pages.yml) publica automaticamente cada push na branch `main`.
+O site está publicado no GitHub Pages pela branch `gh-pages`, com HTTPS ativo. A branch contém apenas o build estático da pasta `dist/`; o código-fonte permanece na `main`.
 
-No repositório GitHub, confirme uma vez em **Settings → Pages → Build and deployment → Source** que a opção **GitHub Actions** está selecionada. O workflow então:
+### Atualizar a publicação atual
+
+```bash
+npm ci
+npm run build:pages
+```
+
+Publique o conteúdo de `dist/` na branch `gh-pages`. O build deve sempre usar `build:pages`, pois ele configura o caminho-base correto para o endereço do projeto no GitHub Pages.
+
+### Automação futura com GitHub Actions
+
+O workflow [deploy-pages.yml](.github/workflows/deploy-pages.yml) está pronto para publicar automaticamente cada push na branch `main`. Para utilizá-lo, em **Settings → Pages → Build and deployment → Source**, selecione **GitHub Actions**.
+
+O workflow então:
 
 1. instala as dependências com `npm ci`;
 2. gera o build com o caminho-base correto do repositório;
@@ -77,6 +90,8 @@ No repositório GitHub, confirme uma vez em **Settings → Pages → Build and d
 4. publica o artefato no ambiente `github-pages`.
 
 Para acompanhar, abra a aba **Actions** do repositório e veja o workflow **Publicar no GitHub Pages**. A URL final é exibida no job de deploy.
+
+> A conta GitHub usada nesta publicação está com os runners hospedados bloqueados por uma pendência de cobrança, portanto o workflow não consegue iniciar neste momento. A publicação estática atual continua funcionando normalmente; após regularizar a conta, basta selecionar **GitHub Actions** para restabelecer o deploy automático.
 
 ## Estrutura
 
