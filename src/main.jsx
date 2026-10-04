@@ -184,6 +184,7 @@ function App() {
           })}
         </div>
 
+        <div className="dashboard-grid">
         <article className="results-card">
           <header className="card-header">
             <div>
@@ -204,6 +205,7 @@ function App() {
             <input id="candidate-search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Nome, partido ou número" />
           </div>
           <div className="candidate-header"><span>Candidatos {filteredCandidates.length > 50 ? '(top 50)' : ''}</span><span>Votos</span></div>
+          <div className="candidate-list">
           {loading && !data ? <div className="loading-state">Consultando a fonte oficial…</div> : displayedCandidates.map((candidate, index) => (
             <div className="candidate" key={`${candidate.numero}-${candidate.nome}`}>
               <span className="rank">{candidate.posicao || index + 1}</span>
@@ -213,7 +215,8 @@ function App() {
             </div>
           ))}
           {!loading && !filteredCandidates.length && <div className="loading-state">Nenhum candidato encontrado para esta busca.</div>}
-          {filteredCandidates.length > 50 && <p className="candidate-limit">Exibindo os 50 primeiros de {number.format(filteredCandidates.length)} candidatos.</p>}
+          </div>
+          {filteredCandidates.length > 50 && <p className="candidate-limit">Exibindo os 50 primeiros de {number.format(filteredCandidates.length)} candidatos. Role a lista para ver mais.</p>}
         </article>
 
         <section className="favorites-panel" aria-labelledby="favorites-title">
@@ -222,6 +225,7 @@ function App() {
           </div>
           {favorites.length ? <div className="favorite-list">{favorites.map((candidate) => <div className="favorite" key={candidate.key}><span className="favorite-star">★</span><div><strong>{candidate.nome}</strong><span>{candidate.election.shortTitle} · {candidate.partido} {candidate.numero}</span></div><div><strong>{candidate.votos.porcentagem}%</strong><span>{number.format(candidate.votos.quantidade)} votos</span></div><button onClick={() => toggleFavorite(candidate.electionId, candidate)} aria-label={`Remover ${candidate.nome} dos fixados}`}>×</button></div>)}</div> : <p className="empty-favorites">Use a estrela ao lado de um candidato para deixá-lo fixado aqui e acompanhar qualquer mudança nos votos.</p>}
         </section>
+        </div>
 
         <footer>
           <span><i className="status-dot" /> Dados atualizados automaticamente a cada 30 segundos</span>
